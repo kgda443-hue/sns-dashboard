@@ -3,73 +3,103 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>SNS Dashboard</title>
+<title>SNSのびのび手帳</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0e7c66">
+<meta name="theme-color" content="#ff6f91">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="SNS">
+<meta name="apple-mobile-web-app-title" content="のびのび手帳">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700&display=swap">
 <style>
   * { box-sizing: border-box; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif;
+    font-family: "M PLUS Rounded 1c", -apple-system, "Hiragino Sans", sans-serif;
     margin: 0;
-    background: #faf9f5;
-    color: #1c1b18;
-    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+    background: #fff6f3;
+    color: #4a3f3c;
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
   }
   header {
-    padding: calc(16px + env(safe-area-inset-top, 0px)) 16px 8px;
+    padding: calc(20px + env(safe-area-inset-top, 0px)) 18px 10px;
   }
-  header h1 { font-size: 19px; margin: 0 0 2px; }
-  header .updated { font-size: 12px; color: #6b675c; }
-  .view { padding: 0 16px 16px; }
+  header h1 { font-size: 21px; margin: 0 0 2px; font-weight: 700; color: #3a2e2c; }
+  header .sub { font-size: 12px; color: #a98d89; margin-bottom: 4px; }
+  header .updated { font-size: 11px; color: #c2a9a5; }
+  .view { padding: 4px 16px 16px; }
   .view[hidden] { display: none; }
 
-  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
-  .card { background: #fff; border: 1px solid #e4e1d6; border-radius: 12px; padding: 14px 16px; }
-  .card .label { font-size: 12px; color: #6b675c; margin-bottom: 6px; }
-  .card .value { font-size: 22px; font-weight: 600; }
-  .card .delta { font-size: 12px; margin-top: 2px; color: #6b675c; }
-  .card .delta.up { color: #0e7c66; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 18px; }
+  .card {
+    background: #fff;
+    border: 1px solid #ffd9e3;
+    border-radius: 20px;
+    padding: 16px 18px;
+    box-shadow: 0 4px 14px rgba(255, 111, 145, 0.10);
+  }
+  .card .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 700; color: #fff;
+    padding: 3px 10px; border-radius: 999px; margin-bottom: 8px;
+  }
+  .card .handle { font-size: 11px; color: #a98d89; margin-bottom: 6px; }
+  .card .value { font-size: 26px; font-weight: 700; color: #3a2e2c; }
+  .card .delta { font-size: 12px; margin-top: 4px; font-weight: 500; color: #a98d89; }
+  .card .delta.up { color: #3aa876; }
+  .card .delta.down { color: #e06b7a; }
 
-  .legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: #6b675c; margin-bottom: 8px; }
-  .legend span { display: inline-flex; align-items: center; gap: 4px; }
-  .dot { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
-  #chart-wrap { position: relative; height: 260px; background: #fff; border: 1px solid #e4e1d6; border-radius: 12px; padding: 16px; }
-  .empty { font-size: 13px; color: #6b675c; padding: 24px 0; text-align: center; }
+  .legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: 11px; color: #a98d89; margin-bottom: 8px; }
+  .legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  #chart-wrap {
+    position: relative; height: 250px;
+    background: #fff; border: 1px solid #ffd9e3; border-radius: 20px; padding: 16px;
+    box-shadow: 0 4px 14px rgba(255, 111, 145, 0.10);
+  }
+  .empty { font-size: 13px; color: #a98d89; padding: 24px 0; text-align: center; }
 
   form { display: flex; flex-direction: column; gap: 14px; margin-top: 8px; }
-  label { font-size: 13px; color: #444; display: flex; flex-direction: column; gap: 4px; }
-  input, select { padding: 10px; font-size: 16px; border: 1px solid #e4e1d6; border-radius: 8px; background: #fff; }
-  button.primary { margin-top: 4px; padding: 12px; font-size: 16px; background: #0e7c66; color: #fff; border: none; border-radius: 8px; }
-  #msg { font-size: 13px; color: #6b675c; }
+  label { font-size: 13px; color: #6b5551; font-weight: 500; display: flex; flex-direction: column; gap: 5px; }
+  input, select {
+    padding: 11px 12px; font-size: 16px;
+    border: 1px solid #ffd9e3; border-radius: 12px; background: #fff;
+    font-family: inherit; color: #3a2e2c;
+  }
+  button.primary {
+    margin-top: 4px; padding: 13px; font-size: 15px; font-weight: 700;
+    background: #ff6f91; color: #fff; border: none; border-radius: 14px;
+    box-shadow: 0 4px 12px rgba(255, 111, 145, 0.35);
+  }
+  #msg { font-size: 13px; color: #a98d89; }
 
   nav.tabbar {
     position: fixed;
     left: 0; right: 0; bottom: 0;
-    display: flex;
+    display: flex; gap: 8px;
     background: #fff;
-    border-top: 1px solid #e4e1d6;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+    border-top: 1px solid #ffe3e9;
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
   }
   nav.tabbar button {
     flex: 1;
     border: none;
     background: none;
-    padding: 10px 0 8px;
+    padding: 8px 0;
     font-size: 12px;
-    color: #9b968a;
+    font-weight: 500;
+    color: #c2a9a5;
+    border-radius: 14px;
   }
-  nav.tabbar button .icon { display: block; font-size: 18px; margin-bottom: 2px; }
-  nav.tabbar button.active { color: #0e7c66; }
+  nav.tabbar button .icon { display: block; font-size: 17px; margin-bottom: 2px; }
+  nav.tabbar button.active { color: #ff6f91; background: #fff0f3; }
 </style>
 </head>
 <body>
 
 <header>
-  <h1>SNS Dashboard</h1>
+  <h1>SNSのびのび手帳</h1>
+  <div class="sub">今日の伸び、のぞいてみよう</div>
   <div class="updated" id="updated">読み込み中...</div>
 </header>
 
@@ -105,10 +135,10 @@
 
 <nav class="tabbar">
   <button data-view="dashboard" class="tab active" id="tab-dashboard">
-    <span class="icon">▤</span>ダッシュボード
+    <span class="icon">◕</span>ダッシュボード
   </button>
   <button data-view="input" class="tab" id="tab-input">
-    <span class="icon">✎</span>入力
+    <span class="icon">✎</span>数字を入力
   </button>
 </nav>
 
@@ -117,12 +147,14 @@
 const SUPABASE_URL = 'https://zqahddjdeqolxnziznsu.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_B9-gSmahavvSi6ukjC6lfQ_N0J3P6ey';
 const DAYS = 30;
-const COLORS = ['#2a78d6', '#eb6834', '#639922', '#993556', '#854f0b'];
+const PLATFORM_STYLE = {
+  x: { label: 'X', color: '#5b9bd5' },
+  instagram: { label: 'Instagram', color: '#e1306c' },
+};
+const FALLBACK_COLORS = ['#8e7cc3', '#f6b93b', '#3aa876'];
 
-function platformLabel(p) {
-  if (p === 'x') return 'X';
-  if (p === 'instagram') return 'Instagram';
-  return p;
+function platformInfo(p, i) {
+  return PLATFORM_STYLE[p] || { label: p, color: FALLBACK_COLORS[i % FALLBACK_COLORS.length] };
 }
 
 async function sb(path) {
@@ -163,19 +195,23 @@ function renderKpis(accounts, metricsByAccount) {
     kpis.innerHTML = '<div class="empty">登録されているアカウントがありません</div>';
     return;
   }
-  kpis.innerHTML = accounts.map(function (acc) {
+  kpis.innerHTML = accounts.map(function (acc, i) {
+    const info = platformInfo(acc.platform, i);
     const rows = metricsByAccount[acc.id] || [];
     const latest = rows[rows.length - 1];
     const prev = rows[rows.length - 2];
     let deltaHtml = '';
     if (latest && prev) {
       const diff = latest.followers_count - prev.followers_count;
+      const cls = diff > 0 ? ' up' : diff < 0 ? ' down' : '';
+      const arrow = diff > 0 ? '▲' : diff < 0 ? '▼' : '';
       const sign = diff > 0 ? '+' : '';
-      deltaHtml = '<div class="delta' + (diff > 0 ? ' up' : '') + '">' + sign + diff.toLocaleString() + '</div>';
+      deltaHtml = '<div class="delta' + cls + '">' + arrow + ' ' + sign + diff.toLocaleString() + '(前回比)</div>';
     }
     return '<div class="card">' +
-      '<div class="label">' + platformLabel(acc.platform) + ' · ' + acc.handle + '</div>' +
-      '<div class="value">' + (latest ? latest.followers_count.toLocaleString() : '-') + '</div>' +
+      '<span class="badge" style="background:' + info.color + '">' + info.label + '</span>' +
+      '<div class="handle">' + acc.handle + '</div>' +
+      '<div class="value">' + (latest ? latest.followers_count.toLocaleString() : '-') + '<span style="font-size:12px;font-weight:500;color:#a98d89;"> 人</span></div>' +
       deltaHtml +
       '</div>';
   }).join('');
@@ -184,8 +220,8 @@ function renderKpis(accounts, metricsByAccount) {
 function renderLegend(accounts) {
   const legend = document.getElementById('legend');
   legend.innerHTML = accounts.map(function (acc, i) {
-    const color = COLORS[i % COLORS.length];
-    return '<span><span class="dot" style="background:' + color + '"></span>' + platformLabel(acc.platform) + ' · ' + acc.handle + '</span>';
+    const info = platformInfo(acc.platform, i);
+    return '<span><span class="dot" style="background:' + info.color + '"></span>' + info.label + ' · ' + acc.handle + '</span>';
   }).join('');
 }
 
@@ -198,14 +234,22 @@ function renderChart(accounts, metricsByAccount) {
   const labels = Array.from(allDates).sort();
 
   const datasets = accounts.map(function (acc, i) {
+    const info = platformInfo(acc.platform, i);
     const map = {};
     (metricsByAccount[acc.id] || []).forEach(function (r) { map[r.date] = r.followers_count; });
     return {
-      label: platformLabel(acc.platform) + ' · ' + acc.handle,
+      label: info.label + ' · ' + acc.handle,
       data: labels.map(function (d) { return map[d] ?? null; }),
-      borderColor: COLORS[i % COLORS.length],
+      borderColor: info.color,
+      backgroundColor: info.color + '22',
+      fill: true,
       spanGaps: true,
-      tension: 0.3,
+      tension: 0.35,
+      pointRadius: 4,
+      pointBackgroundColor: '#fff',
+      pointBorderColor: info.color,
+      pointBorderWidth: 2,
+      borderWidth: 3,
     };
   });
 
@@ -217,6 +261,10 @@ function renderChart(accounts, metricsByAccount) {
       responsive: true,
       maintainAspectRatio: false,
       plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false } },
+        y: { grid: { color: '#fff0f3' } },
+      },
     },
   });
 }
@@ -228,8 +276,9 @@ function populateAccountSelect(accounts) {
     select.innerHTML = '<option value="">手動入力のアカウントがありません</option>';
     return;
   }
-  select.innerHTML = manual.map(function (a) {
-    return '<option value="' + a.id + '">' + platformLabel(a.platform) + ' · ' + a.handle + '</option>';
+  select.innerHTML = manual.map(function (a, i) {
+    const info = platformInfo(a.platform, i);
+    return '<option value="' + a.id + '">' + info.label + ' · ' + a.handle + '</option>';
   }).join('');
 }
 
@@ -278,7 +327,7 @@ document.getElementById('form').addEventListener('submit', async function (e) {
 
   try {
     await sbWrite(row);
-    msg.textContent = '保存しました。';
+    msg.textContent = '保存しました。よくがんばりました!';
     loadDashboard();
   } catch (err) {
     msg.textContent = '保存に失敗しました。' + err.message;
