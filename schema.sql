@@ -4,7 +4,7 @@
 -- 管理するSNSアカウントの一覧
 create table accounts (
   id serial primary key,
-  platform text not null check (platform in ('x', 'instagram')),
+  platform text not null check (platform in ('x', 'instagram', 'threads')),
   handle text not null,
   data_source text not null check (data_source in ('manual', 'api')),
   created_at timestamptz default now()
