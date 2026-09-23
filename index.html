@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SNS Dashboard</title>
+<style>
+  body { font-family: sans-serif; max-width: 720px; margin: 0 auto; padding: 24px 16px 48px; color: #1c1b18; background: #faf9f5; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .updated { font-size: 13px; color: #6b675c; margin: 0 0 20px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .card { background: #fff; border: 1px solid #e4e1d6; border-radius: 10px; padding: 14px 16px; }
+  .card .label { font-size: 13px; color: #6b675c; margin-bottom: 6px; }
+  .card .value { font-size: 22px; font-weight: 600; }
+  #chart-wrap { position: relative; height: 260px; margin: 24px 0; background: #fff; border: 1px solid #e4e1d6; border-radius: 10px; padding: 16px; box-sizing: border-box; }
+  .legend { display: flex; gap: 16px; font-size: 12px; color: #6b675c; margin-bottom: 8px; }
+  .legend span { display: inline-flex; align-items: center; gap: 4px; }
+  .dot { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+  .error { color: #a32d2d; font-size: 14px; }
+</style>
+</head>
+<body>
+<h1>SNS Dashboard</h1>
+<p class="updated" id="updated">読み込み中...</p>
+<div class="kpis" id="kpis"></div>
+<div class="legend">
+  <span><span class="dot" style="background:#2a78d6"></span>X フォロワー数</span>
+  <span><span class="dot" style="background:#eb6834"></span>Instagram フォロワー数</span>
+</div>
+<div id="chart-wrap">
+  <canvas id="trendChart" role="img" aria-label="XとInstagramのフォロワー数推移"></canvas>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+// ↓Supabaseプロジェクトの「Project URL」と「anon public」キーに書き換えてください
+const SUPABASE_URL = 'https://zqahddjdeqolxnziznsu.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_B9-gSmahavvSi6ukjC6lfQ_N0J3P6ey';
+const X_ACCOUNT_ID = 1;
+const IG_ACCOUNT_ID = 2;
+const DAYS = 30;
+
+async function fetchMetrics(accountId) {
+  const since = new Date(Date.now() - DAYS * 86400000).toISOString().slice(0, 10);
+  const url = SUPABASE_URL + '/rest/v1/daily_metrics?account_id=eq.' + accountId + '&date=gte.' + since + '&order=date.asc';
+  const res = await fetch(url, {
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY },
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+function renderKpis(xLatest, igLatest) {
+  const kpis = document.getElementById('kpis');
+  kpis.innerHTML =
+    '<div class="card"><div class="label">Xフォロワー</div><div class="value">' +
+    (xLatest ? xLatest.followers_count.toLocaleString() : '-') +
+    '</div></div>' +
+    '<div class="card"><div class="label">Instagramフォロワー</div><div class="value">' +
+    (igLatest ? igLatest.followers_count.toLocaleString() : '-') +
+    '</div></div>';
+}
+
+function renderChart(xData, igData) {
+  const labels = Array.from(new Set(xData.concat(igData).map(function (r) { return r.date; }))).sort();
+  const xMap = {};
+  xData.forEach(function (r) { xMap[r.date] = r.followers_count; });
+  const igMap = {};
+  igData.forEach(function (r) { igMap[r.date] = r.followers_count; });
+
+  new Chart(document.getElementById('trendChart'), {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [
+        { label: 'X', data: labels.map(function (d) { return xMap[d] ?? null; }), borderColor: '#2a78d6', spanGaps: true, tension: 0.3 },
+        { label: 'Instagram', data: labels.map(function (d) { return igMap[d] ?? null; }), borderColor: '#eb6834', spanGaps: true, tension: 0.3 },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+    },
+  });
+}
+
+async function main() {
+  const updated = document.getElementById('updated');
+  try {
+    const xData = await fetchMetrics(X_ACCOUNT_ID);
+    const igData = await fetchMetrics(IG_ACCOUNT_ID);
+    renderKpis(xData[xData.length - 1], igData[igData.length - 1]);
+    renderChart(xData, igData);
+    updated.textContent = '最終更新: ' + new Date().toLocaleString('ja-JP');
+  } catch (err) {
+    updated.innerHTML = '<span class="error">データの読み込みに失敗しました: ' + err.message + '</span>';
+  }
+}
+
+main();
+</script>
+</body>
+</html>
