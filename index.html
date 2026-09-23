@@ -49,14 +49,24 @@
   .card .delta.up { color: #3aa876; }
   .card .delta.down { color: #e06b7a; }
 
-  .legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: 11px; color: #a98d89; margin-bottom: 8px; }
-  .legend span { display: inline-flex; align-items: center; gap: 5px; }
-  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-  #chart-wrap {
-    position: relative; height: 250px;
-    background: #fff; border: 1px solid #ffd9e3; border-radius: 20px; padding: 16px;
+  .section-title { font-size: 13px; font-weight: 700; color: #6b5551; margin: 4px 0 10px; }
+  .account-chart-card {
+    background: #fff; border: 1px solid #ffd9e3; border-radius: 20px;
+    padding: 16px 16px 6px; margin-bottom: 14px;
     box-shadow: 0 4px 14px rgba(255, 111, 145, 0.10);
   }
+  .account-chart-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; gap: 8px; }
+  .account-chart-head .who { display: flex; align-items: center; gap: 8px; }
+  .account-chart-head .badge {
+    font-size: 11px; font-weight: 700; color: #fff;
+    padding: 3px 10px; border-radius: 999px;
+  }
+  .account-chart-head .handle { font-size: 12px; color: #a98d89; }
+  .account-chart-head .latest { font-size: 16px; font-weight: 700; color: #3a2e2c; }
+  .mini-chart-wrap { position: relative; height: 170px; }
+  .stats-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 12px; }
+  .stat-chip { background: #fff6f3; border-radius: 10px; padding: 6px 10px; font-size: 11px; color: #6b5551; }
+  .stat-chip b { color: #3a2e2c; font-size: 12px; }
   .empty { font-size: 13px; color: #a98d89; padding: 24px 0; text-align: center; }
 
   form { display: flex; flex-direction: column; gap: 14px; margin-top: 8px; }
@@ -105,10 +115,8 @@
 
 <section id="view-dashboard" class="view">
   <div class="kpis" id="kpis"></div>
-  <div class="legend" id="legend"></div>
-  <div id="chart-wrap">
-    <canvas id="trendChart" role="img" aria-label="登録アカウントのフォロワー数推移"></canvas>
-  </div>
+  <div class="section-title">アカウントごとのグラフ</div>
+  <div id="account-charts"></div>
 </section>
 
 <section id="view-input" class="view" hidden>
@@ -218,55 +226,86 @@ function renderKpis(accounts, metricsByAccount) {
   }).join('');
 }
 
-function renderLegend(accounts) {
-  const legend = document.getElementById('legend');
-  legend.innerHTML = accounts.map(function (acc, i) {
-    const info = platformInfo(acc.platform, i);
-    return '<span><span class="dot" style="background:' + info.color + '"></span>' + info.label + ' · ' + acc.handle + '</span>';
+const METRIC_LABELS = {
+  impressions: 'インプレッション',
+  reach: 'リーチ',
+  engagement_rate: 'エンゲージメント率',
+  avg_likes: '平均いいね',
+  saves: '保存数',
+};
+
+const chartInstances = {};
+function renderAccountCharts(accounts, metricsByAccount) {
+  const wrap = document.getElementById('account-charts');
+  if (accounts.length === 0) {
+    wrap.innerHTML = '<div class="empty">登録されているアカウントがありません</div>';
+    return;
+  }
+
+  wrap.innerHTML = accounts.map(function (acc) {
+    return '<div class="account-chart-card" data-account-id="' + acc.id + '">' +
+      '<div class="account-chart-head">' +
+      '<div class="who"><span class="badge" style="background:' + platformInfo(acc.platform, 0).color + '">' +
+      platformInfo(acc.platform, 0).label + '</span><span class="handle">' + acc.handle + '</span></div>' +
+      '<div class="latest" id="latest-' + acc.id + '"></div>' +
+      '</div>' +
+      '<div class="mini-chart-wrap"><canvas id="chart-' + acc.id + '"></canvas></div>' +
+      '<div class="stats-row" id="stats-' + acc.id + '"></div>' +
+      '</div>';
   }).join('');
-}
 
-let chartInstance = null;
-function renderChart(accounts, metricsByAccount) {
-  const allDates = new Set();
   accounts.forEach(function (acc) {
-    (metricsByAccount[acc.id] || []).forEach(function (r) { allDates.add(r.date); });
-  });
-  const labels = Array.from(allDates).sort();
+    const info = platformInfo(acc.platform, 0);
+    const rows = metricsByAccount[acc.id] || [];
+    const latest = rows[rows.length - 1];
 
-  const datasets = accounts.map(function (acc, i) {
-    const info = platformInfo(acc.platform, i);
-    const map = {};
-    (metricsByAccount[acc.id] || []).forEach(function (r) { map[r.date] = r.followers_count; });
-    return {
-      label: info.label + ' · ' + acc.handle,
-      data: labels.map(function (d) { return map[d] ?? null; }),
-      borderColor: info.color,
-      backgroundColor: info.color + '22',
-      fill: true,
-      spanGaps: true,
-      tension: 0.35,
-      pointRadius: 4,
-      pointBackgroundColor: '#fff',
-      pointBorderColor: info.color,
-      pointBorderWidth: 2,
-      borderWidth: 3,
-    };
-  });
+    document.getElementById('latest-' + acc.id).textContent =
+      latest ? latest.followers_count.toLocaleString() + '人' : 'データなし';
 
-  if (chartInstance) chartInstance.destroy();
-  chartInstance = new Chart(document.getElementById('trendChart'), {
-    type: 'line',
-    data: { labels: labels, datasets: datasets },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { grid: { display: false } },
-        y: { grid: { color: '#fff0f3' } },
+    const statsEl = document.getElementById('stats-' + acc.id);
+    if (latest) {
+      const chips = Object.keys(METRIC_LABELS)
+        .filter(function (key) { return latest[key] !== null && latest[key] !== undefined; })
+        .map(function (key) {
+          const suffix = key === 'engagement_rate' ? '%' : '';
+          return '<span class="stat-chip">' + METRIC_LABELS[key] + ' <b>' + latest[key] + suffix + '</b></span>';
+        });
+      statsEl.innerHTML = chips.join('');
+    } else {
+      statsEl.innerHTML = '';
+    }
+
+    const labels = rows.map(function (r) { return r.date; });
+    const data = rows.map(function (r) { return r.followers_count; });
+
+    if (chartInstances[acc.id]) chartInstances[acc.id].destroy();
+    chartInstances[acc.id] = new Chart(document.getElementById('chart-' + acc.id), {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: data,
+          borderColor: info.color,
+          backgroundColor: info.color + '22',
+          fill: true,
+          tension: 0.35,
+          pointRadius: 4,
+          pointBackgroundColor: '#fff',
+          pointBorderColor: info.color,
+          pointBorderWidth: 2,
+          borderWidth: 3,
+        }],
       },
-    },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false } },
+          y: { grid: { color: '#fff0f3' } },
+        },
+      },
+    });
   });
 }
 
@@ -294,8 +333,7 @@ async function loadDashboard() {
     }));
 
     renderKpis(accounts, metricsByAccount);
-    renderLegend(accounts);
-    renderChart(accounts, metricsByAccount);
+    renderAccountCharts(accounts, metricsByAccount);
     populateAccountSelect(accounts);
     updated.textContent = '最終更新: ' + new Date().toLocaleString('ja-JP');
   } catch (err) {
