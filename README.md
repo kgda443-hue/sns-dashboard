@@ -50,9 +50,9 @@ X(Twitter)とInstagramの数値を1つの画面で見るための個人用アプ
 登録が終わると、毎日日本時間8:00に自動でInstagramの数値が取得されます。
 「Actions」タブから手動で今すぐ実行して、動作確認もできます。
 
-## 手順5: 入力フォームとダッシュボードの設定
+## 手順5: アプリ本体の設定
 
-[form.html](form.html) と [index.html](index.html) の中にある、次の2行を手順1でメモした値に書き換える。
+[index.html](index.html) の中にある、次の2行を手順1でメモした値に書き換える。
 
 ```js
 const SUPABASE_URL = 'https://YOUR-PROJECT.supabase.co';
@@ -63,13 +63,23 @@ const SUPABASE_ANON_KEY = 'YOUR-ANON-KEY';
 
 1. リポジトリの「Settings > Pages」を開く
 2. 「Branch」を `main` にして保存する
-3. 数分後、`https://(あなたのID).github.io/sns-dashboard/` でダッシュボード(index.html)が見られるようになる
-4. `https://(あなたのID).github.io/sns-dashboard/form.html` がXの数値入力フォーム
-5. スマホでこのURLを開き、ホーム画面に追加すればアプリのように使える
+3. 数分後、`https://(あなたのID).github.io/sns-dashboard/` でアプリが開けるようになる
+
+## スマホへの追加(QRコード)
+
+[qr-code.png](qr-code.png) を読み取ると、アプリのURLが開きます。
+
+1. QRコードを読み取ってURLを開く
+2. ブラウザのメニューから「ホーム画面に追加」(iPhone)または「アプリをインストール」(Android)を選ぶ
+3. ホーム画面のアイコンから、アプリのように起動できる
+
+## 複数アカウントに対応する場合
+
+Xのアカウントを複数登録したいときは、Supabaseの「Table Editor」から`accounts`の表に行を追加してください(`platform`は`x`、`data_source`は`manual`)。追加すると、入力画面のアカウント選択に自動で反映されます。
 
 ## セキュリティについての注意
 
-`form.html` は、URLと anon key を知っていれば誰でもデータを書き込める簡易な作りです。
+このアプリは、URLと鍵(anon key)を知っていれば誰でもデータを書き込める簡易な作りです。
 個人用でURLを公開しない前提であれば問題ありませんが、より厳密に守りたい場合は認証機能の追加が必要です。判断に迷う場合は相談してください。
 
 ## 各ファイルの役割
@@ -79,5 +89,7 @@ const SUPABASE_ANON_KEY = 'YOUR-ANON-KEY';
 | `schema.sql` | データベースの表を作るための設定(Supabaseで1回だけ実行) |
 | `scripts/fetch-instagram.js` | Instagramの数値を取得して保存するプログラム |
 | `.github/workflows/daily-fetch.yml` | 上のプログラムを毎日自動実行する設定 |
-| `form.html` | Xの数値を手動入力する画面 |
-| `index.html` | 数値を確認するダッシュボード画面 |
+| `index.html` | 入力とダッシュボードを1つにまとめたアプリ本体 |
+| `manifest.json` / `service-worker.js` | ホーム画面に追加できるようにする設定 |
+| `icons/` | アプリのアイコン画像 |
+| `qr-code.png` | スマホで読み取るためのQRコード |

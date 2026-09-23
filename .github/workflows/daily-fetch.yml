@@ -1,9 +1,19 @@
+# 毎日決まった時間にInstagramのデータを自動取得するための設定です。
+# 使う前に、GitHubリポジトリの
+# 「Settings > Secrets and variables > Actions」で
+# 下記5つのSecretを登録してください:
+#   SUPABASE_URL
+#   SUPABASE_SERVICE_KEY
+#   INSTAGRAM_ACCESS_TOKEN
+#   INSTAGRAM_ACCOUNT_ID
+#   INSTAGRAM_DB_ACCOUNT_ID
+
 name: Instagramデータの自動取得
 
 on:
   schedule:
-    - cron: '0 23 * * *'
-  workflow_dispatch:
+    - cron: '0 23 * * *' # 毎日 日本時間8:00(UTC 23:00)に実行
+  workflow_dispatch: # 手動で今すぐ実行するボタンも使えるようにする
 
 jobs:
   fetch:
