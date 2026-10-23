@@ -103,6 +103,43 @@
   }
   nav.tabbar button .icon { display: block; font-size: 17px; margin-bottom: 2px; }
   nav.tabbar button.active { color: #ff6f91; background: #fff0f3; }
+
+  /* リサーチ */
+  .comp-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+  .comp-row {
+    background: #fff; border: 1px solid #ffd9e3; border-radius: 16px; padding: 12px 14px;
+    display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center;
+  }
+  .comp-row .who { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .comp-row .who span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+  .comp-row .num { font-size: 17px; font-weight: 700; text-align: right; }
+  .comp-row .meta { grid-column: 1 / -1; font-size: 11px; color: #a98d89; }
+  .pill { font-size: 10px; font-weight: 700; color: #fff; padding: 2px 8px; border-radius: 999px; flex-shrink: 0; }
+  .filters { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+  .filters button {
+    border: 1px solid #ffd9e3; background: #fff; color: #6b5551; font-family: inherit;
+    font-size: 12px; padding: 6px 12px; border-radius: 999px;
+  }
+  .filters button.active { background: #ff6f91; border-color: #ff6f91; color: #fff; }
+  .post-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+  .post {
+    background: #fff; border: 1px solid #ffd9e3; border-radius: 16px; padding: 12px 14px;
+    text-decoration: none; color: inherit; display: block;
+  }
+  .post .top { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #a98d89; margin-bottom: 6px; flex-wrap: wrap; }
+  .post .text { font-size: 13px; line-height: 1.6; color: #3a2e2c; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; }
+  .post .nums { font-size: 12px; color: #6b5551; margin-top: 6px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .post .nums b { color: #3a2e2c; }
+  .target-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .target {
+    display: inline-flex; align-items: center; gap: 6px; background: #fff; border: 1px solid #ffd9e3;
+    border-radius: 999px; padding: 4px 6px 4px 10px; font-size: 12px;
+  }
+  .target button { border: none; background: #fff0f3; color: #e06b7a; border-radius: 999px; width: 22px; height: 22px; font-size: 12px; }
+  .add-target { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .add-target input { grid-column: 1 / -1; }
+  .add-target button { grid-column: 1 / -1; }
+  .hint { font-size: 11px; color: #a98d89; line-height: 1.6; margin: 6px 0 14px; }
 </style>
 </head>
 <body>
@@ -141,12 +178,56 @@
   <p id="msg"></p>
 </section>
 
+<section id="view-research" class="view" hidden>
+  <div class="section-title">競合アカウント(7日前との比較)</div>
+  <div class="comp-list" id="comp-list"></div>
+
+  <div class="section-title">集めた投稿</div>
+  <div class="filters" id="post-filters">
+    <button data-p="all" class="active">すべて</button>
+    <button data-p="instagram">Instagram</button>
+    <button data-p="threads">Threads</button>
+    <button data-p="tiktok">TikTok</button>
+  </div>
+  <div class="filters" id="post-sorts">
+    <button data-s="new" class="active">新しく集めた順</button>
+    <button data-s="likes">いいね順</button>
+    <button data-s="views">再生数順</button>
+  </div>
+  <div class="post-list" id="post-list"></div>
+
+  <div class="section-title">調べる対象</div>
+  <div class="target-list" id="target-list"></div>
+  <form class="add-target" id="target-form">
+    <select id="t-platform">
+      <option value="instagram">Instagram</option>
+      <option value="threads">Threads</option>
+      <option value="tiktok">TikTok</option>
+    </select>
+    <select id="t-kind">
+      <option value="account">競合アカウント</option>
+      <option value="keyword">キーワード</option>
+      <option value="hashtag">ハッシュタグ</option>
+    </select>
+    <input id="t-value" placeholder="例: アカウント名 / 社会人 学び直し / #朝活" required>
+    <button type="submit" class="primary">追加する</button>
+  </form>
+  <p class="hint" id="target-msg">
+    Instagram: 競合アカウント(ビジネス/クリエイターのみ)・ハッシュタグ(週30個まで)<br>
+    Threads: キーワード・競合アカウント<br>
+    TikTok: キーワード(毎週月曜にまとめて収集。月の無料枠の関係で2〜3個まで)
+  </p>
+</section>
+
 <nav class="tabbar">
   <button data-view="dashboard" class="tab active" id="tab-dashboard">
     <span class="icon">◕</span>ダッシュボード
   </button>
   <button data-view="input" class="tab" id="tab-input">
     <span class="icon">✎</span>数字を入力
+  </button>
+  <button data-view="research" class="tab" id="tab-research">
+    <span class="icon">⌕</span>リサーチ
   </button>
 </nav>
 
@@ -159,6 +240,7 @@ const PLATFORM_STYLE = {
   x: { label: 'X', color: '#5b9bd5' },
   instagram: { label: 'Instagram', color: '#e1306c' },
   threads: { label: 'Threads', color: '#3a3a3a' },
+  tiktok: { label: 'TikTok', color: '#25b5b0' },
 };
 const FALLBACK_COLORS = ['#8e7cc3', '#f6b93b', '#3aa876'];
 
@@ -188,15 +270,22 @@ async function sbWrite(row) {
   if (!res.ok) throw new Error(await res.text());
 }
 
+const VIEWS = ['dashboard', 'input', 'research'];
+let researchLoaded = false;
 function switchView(name) {
-  document.getElementById('view-dashboard').hidden = name !== 'dashboard';
-  document.getElementById('view-input').hidden = name !== 'input';
-  document.getElementById('tab-dashboard').classList.toggle('active', name === 'dashboard');
-  document.getElementById('tab-input').classList.toggle('active', name === 'input');
+  VIEWS.forEach(function (v) {
+    document.getElementById('view-' + v).hidden = name !== v;
+    document.getElementById('tab-' + v).classList.toggle('active', name === v);
+  });
+  if (name === 'research' && !researchLoaded) {
+    researchLoaded = true;
+    loadResearch();
+  }
 }
 
-document.getElementById('tab-dashboard').addEventListener('click', function () { switchView('dashboard'); });
-document.getElementById('tab-input').addEventListener('click', function () { switchView('input'); });
+VIEWS.forEach(function (v) {
+  document.getElementById('tab-' + v).addEventListener('click', function () { switchView(v); });
+});
 
 function renderKpis(accounts, metricsByAccount) {
   const kpis = document.getElementById('kpis');
@@ -370,6 +459,191 @@ document.getElementById('form').addEventListener('submit', async function (e) {
     loadDashboard();
   } catch (err) {
     msg.textContent = '保存に失敗しました。' + err.message;
+  }
+});
+
+// ---------- リサーチ ----------
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+function fmt(n) {
+  if (n === null || n === undefined) return '-';
+  n = Number(n);
+  if (n >= 10000) return (Math.round(n / 1000) / 10) + '万';
+  return n.toLocaleString();
+}
+function pill(platform) {
+  const info = platformInfo(platform, 0);
+  return '<span class="pill" style="background:' + info.color + '">' + info.label + '</span>';
+}
+function safeUrl(u) {
+  return /^https:\/\//.test(u || '') ? u : '#';
+}
+
+async function sbSend(method, path, body) {
+  const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
+    method: method,
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: 'Bearer ' + SUPABASE_ANON_KEY,
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!res.ok) throw new Error(await res.text());
+}
+
+let allPosts = [];
+let postFilter = 'all';
+let postSort = 'new';
+const KIND_LABEL = { account: '競合', keyword: 'キーワード', hashtag: 'ハッシュタグ' };
+const SOURCE_LABEL = { competitor: '競合の投稿', keyword: 'キーワード', hashtag: 'ハッシュタグ', outlier: 'バズ投稿' };
+
+function renderCompetitors(rows) {
+  const el = document.getElementById('comp-list');
+  const byKey = {};
+  rows.forEach(function (r) {
+    const k = r.platform + ':' + r.handle;
+    (byKey[k] = byKey[k] || []).push(r);
+  });
+  const keys = Object.keys(byKey);
+  if (keys.length === 0) {
+    el.innerHTML = '<div class="empty">まだデータがありません。下の「調べる対象」に競合を追加すると、翌朝から記録されます。</div>';
+    return;
+  }
+  el.innerHTML = keys.map(function (k) {
+    const list = byKey[k]; // 日付の昇順
+    const latest = list[list.length - 1];
+    const weekAgo = new Date(new Date(latest.date).getTime() - 7 * 86400000).toISOString().slice(0, 10);
+    const base = list.filter(function (r) { return r.date <= weekAgo; }).pop() || list[0];
+    let delta = '';
+    if (base !== latest && latest.followers_count != null && base.followers_count != null) {
+      const d = latest.followers_count - base.followers_count;
+      delta = ' ・ ' + (d >= 0 ? '+' : '') + d.toLocaleString() + '人(' + base.date.slice(5) + '比)';
+    }
+    const extra = [];
+    if (latest.avg_likes != null) extra.push('平均いいね ' + fmt(latest.avg_likes));
+    if (latest.avg_comments != null) extra.push('平均コメント ' + fmt(latest.avg_comments));
+    if (latest.media_count != null) extra.push('投稿 ' + fmt(latest.media_count));
+    return '<div class="comp-row">' +
+      '<div class="who">' + pill(latest.platform) + '<span>@' + esc(latest.handle) + '</span></div>' +
+      '<div class="num">' + fmt(latest.followers_count) + '<span style="font-size:11px;color:#a98d89;font-weight:500"> 人</span></div>' +
+      '<div class="meta">' + esc(extra.join(' ・ ')) + esc(delta) + '</div>' +
+      '</div>';
+  }).join('');
+}
+
+function renderPosts() {
+  const el = document.getElementById('post-list');
+  let list = allPosts.filter(function (p) { return postFilter === 'all' || p.platform === postFilter; });
+  const num = function (v) { return v == null ? -1 : Number(v); };
+  if (postSort === 'likes') list = list.slice().sort(function (a, b) { return num(b.like_count) - num(a.like_count); });
+  if (postSort === 'views') list = list.slice().sort(function (a, b) { return num(b.view_count) - num(a.view_count); });
+  list = list.slice(0, 60);
+  if (list.length === 0) {
+    el.innerHTML = '<div class="empty">まだ集めた投稿がありません</div>';
+    return;
+  }
+  el.innerHTML = list.map(function (p) {
+    const nums = [];
+    if (p.view_count != null) nums.push('再生 <b>' + fmt(p.view_count) + '</b>');
+    if (p.like_count != null) nums.push('いいね <b>' + fmt(p.like_count) + '</b>');
+    if (p.comment_count != null) nums.push('コメント <b>' + fmt(p.comment_count) + '</b>');
+    if (p.score != null) nums.push('普段の <b>' + (Math.round(p.score * 10) / 10) + '倍</b>');
+    return '<a class="post" href="' + esc(safeUrl(p.url)) + '" target="_blank" rel="noopener">' +
+      '<div class="top">' + pill(p.platform) +
+      '<span>' + esc(SOURCE_LABEL[p.source] || p.source) + (p.query ? ':' + esc(p.query) : '') + '</span>' +
+      (p.author ? '<span>@' + esc(p.author) + '</span>' : '') +
+      (p.posted_at ? '<span>' + esc(p.posted_at.slice(0, 10)) + '</span>' : '') +
+      '</div>' +
+      '<div class="text">' + esc(p.caption || '(本文なし)') + '</div>' +
+      (nums.length ? '<div class="nums">' + nums.join('') + '</div>' : '') +
+      '</a>';
+  }).join('');
+}
+
+function renderTargets(targets) {
+  const el = document.getElementById('target-list');
+  if (targets.length === 0) {
+    el.innerHTML = '<div class="hint">まだ登録がありません</div>';
+    return;
+  }
+  el.innerHTML = targets.map(function (t) {
+    return '<span class="target">' + pill(t.platform) + esc(KIND_LABEL[t.kind] + ':' + t.value) +
+      '<button data-id="' + t.id + '" aria-label="削除">✕</button></span>';
+  }).join('');
+}
+
+async function loadResearch() {
+  try {
+    const since = new Date(Date.now() - 45 * 86400000).toISOString().slice(0, 10);
+    const results = await Promise.all([
+      sb('competitor_metrics?date=gte.' + since + '&order=date.asc'),
+      sb('trend_posts?order=collected_on.desc,like_count.desc.nullslast&limit=300'),
+      sb('research_targets?order=platform.asc,id.asc'),
+    ]);
+    renderCompetitors(results[0]);
+    allPosts = results[1];
+    renderPosts();
+    renderTargets(results[2]);
+  } catch (err) {
+    document.getElementById('comp-list').innerHTML =
+      '<div class="empty">リサーチデータを読み込めませんでした: ' + esc(err.message) + '</div>';
+  }
+}
+
+document.getElementById('post-filters').addEventListener('click', function (e) {
+  const b = e.target.closest('button');
+  if (!b) return;
+  postFilter = b.dataset.p;
+  this.querySelectorAll('button').forEach(function (x) { x.classList.toggle('active', x === b); });
+  renderPosts();
+});
+document.getElementById('post-sorts').addEventListener('click', function (e) {
+  const b = e.target.closest('button');
+  if (!b) return;
+  postSort = b.dataset.s;
+  this.querySelectorAll('button').forEach(function (x) { x.classList.toggle('active', x === b); });
+  renderPosts();
+});
+
+document.getElementById('target-list').addEventListener('click', async function (e) {
+  const b = e.target.closest('button');
+  if (!b) return;
+  try {
+    await sbSend('DELETE', 'research_targets?id=eq.' + Number(b.dataset.id));
+    loadResearch();
+  } catch (err) {
+    document.getElementById('target-msg').textContent = '削除に失敗しました: ' + err.message;
+  }
+});
+
+document.getElementById('target-form').addEventListener('submit', async function (e) {
+  e.preventDefault();
+  const platform = document.getElementById('t-platform').value;
+  const kind = document.getElementById('t-kind').value;
+  let value = document.getElementById('t-value').value.trim();
+  const msg = document.getElementById('target-msg');
+  if (kind === 'hashtag' && platform !== 'instagram') {
+    msg.textContent = 'ハッシュタグはInstagramだけ対応しています。';
+    return;
+  }
+  if (platform === 'tiktok' && kind !== 'keyword') {
+    msg.textContent = 'TikTokは無料で使える方法の都合で、キーワードだけ対応しています。';
+    return;
+  }
+  if (kind === 'account') value = value.replace(/^@/, '');
+  if (kind === 'hashtag') value = value.replace(/^#/, '');
+  if (!value) return;
+  try {
+    await sbSend('POST', 'research_targets', { platform: platform, kind: kind, value: value });
+    document.getElementById('t-value').value = '';
+    msg.textContent = '追加しました。次の自動取得(毎朝8時)から集め始めます。';
+    loadResearch();
+  } catch (err) {
+    msg.textContent = '追加に失敗しました: ' + err.message;
   }
 });
 

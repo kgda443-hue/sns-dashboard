@@ -65,6 +65,31 @@ const SUPABASE_ANON_KEY = 'YOUR-ANON-KEY';
 2. 「Branch」を `main` にして保存する
 3. 数分後、`https://(あなたのID).github.io/sns-dashboard/` でアプリが開けるようになる
 
+## 競合リサーチ・トレンド収集(すべて無料)
+
+アプリ下の「リサーチ」タブで、競合アカウントの推移と集めた投稿を見られます。調べる対象(競合アカウント・キーワード・ハッシュタグ)も同じ画面から追加・削除できます。
+
+| SNS | 取れるもの | 仕組み | 頻度 |
+|---|---|---|---|
+| Instagram | 競合のフォロワー数・投稿数・直近12投稿の平均いいね/コメント、ハッシュタグの人気投稿 | Instagram公式API(Business Discovery / ハッシュタグ検索) | 毎朝8時 |
+| Threads | キーワードの人気投稿、競合のフォロワー数・投稿 | Threads公式API(キーワード検索 / プロフィール検索) | 毎朝8時 |
+| TikTok | キーワードに近い「普段の何倍も伸びた」動画(とInstagramリール) | vidIQの無料枠(月150クレジット)をClaudeの定期タスクで使用 | 毎週月曜 7:43 |
+
+初めて使うときは [schema-research.sql](schema-research.sql) をSupabaseの「SQL Editor」で1回実行します(実行済みなら不要)。
+
+### 無料で使ううえでの制限
+
+- **Instagramの競合**: 相手がビジネス/クリエイターアカウントの場合だけ取得できます。ハッシュタグは1週間に30種類まで。
+- **Threads**: 他の人の投稿の検索・他アカウントの調査には、Metaのアプリ審査(`threads_keyword_search` / `threads_profile_discovery` の権限、無料)が必要です。審査が通るまでは自分の投稿しか返らないか、権限エラーになります。
+- **TikTok**: 公式APIでは他人のデータを取れないため、vidIQの無料枠を使います。1キーワードで5クレジットなので、キーワードは3つまで(週3回×月4〜5週で最大75クレジット)。クレジットが20未満の週は自動でお休みします。競合アカウントのフォロワー推移はTikTokでは取れません。
+
+### トークンの期限切れで止まらないようにする
+
+- **Instagram**: Graph API Explorerで出る短期トークン(1〜2時間)や60日トークンは期限が切れます。長期ユーザートークンから取得した**Facebookページのアクセストークン**は期限がないので、それを `INSTAGRAM_ACCESS_TOKEN` に登録するのがおすすめです。
+- **Threads**: 長期トークンを `THREADS_ACCESS_TOKEN` に1回登録すれば、以降は毎週自動で延長してSupabaseに保管します(ダッシュボードからは読めない場所です)。
+
+失敗したときは、GitHubの「Actions」で失敗した実行を開くと、赤字で理由(例: トークン期限切れ、Secret未登録)が表示されます。
+
 ## スマホへの追加(QRコード)
 
 [qr-code.png](qr-code.png) を読み取ると、アプリのURLが開きます。
@@ -87,7 +112,10 @@ Xのアカウントを複数登録したいときは、Supabaseの「Table Edito
 | ファイル | 役割 |
 |---|---|
 | `schema.sql` | データベースの表を作るための設定(Supabaseで1回だけ実行) |
-| `scripts/fetch-instagram.js` | Instagramの数値を取得して保存するプログラム |
+| `schema-research.sql` | 競合リサーチ用の表を作る設定(Supabaseで1回だけ実行) |
+| `scripts/fetch-instagram.js` | Instagram(自分・競合・ハッシュタグ)を取得して保存するプログラム |
+| `scripts/fetch-threads.js` | Threads(キーワード・競合)を取得して保存するプログラム |
+| `scripts/lib.js` | 上の2つで共通に使う部品 |
 | `.github/workflows/daily-fetch.yml` | 上のプログラムを毎日自動実行する設定 |
 | `index.html` | 入力とダッシュボードを1つにまとめたアプリ本体 |
 | `manifest.json` / `service-worker.js` | ホーム画面に追加できるようにする設定 |

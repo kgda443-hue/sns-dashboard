@@ -1,14 +1,17 @@
-# 毎日決まった時間にInstagramのデータを自動取得するための設定です。
-# 使う前に、GitHubリポジトリの
-# 「Settings > Secrets and variables > Actions」で
-# 下記5つのSecretを登録してください:
+# 毎日決まった時間にSNSのデータを自動取得するための設定です(すべて無料)。
+# GitHubリポジトリの「Settings > Secrets and variables > Actions」で
+# 下記のSecretを登録してください:
 #   SUPABASE_URL
 #   SUPABASE_SERVICE_KEY
 #   INSTAGRAM_ACCESS_TOKEN
 #   INSTAGRAM_ACCOUNT_ID
 #   INSTAGRAM_DB_ACCOUNT_ID
+#   THREADS_ACCESS_TOKEN   (Threadsのトレンド収集を使う場合)
+#
+# InstagramとThreadsは別々に動くので、片方が失敗してももう片方は保存されます。
+# 失敗したときは、実行結果の画面に赤字で理由が表示されます。
 
-name: Instagramデータの自動取得
+name: SNSデータの自動取得
 
 on:
   schedule:
@@ -16,13 +19,14 @@ on:
   workflow_dispatch: # 手動で今すぐ実行するボタンも使えるようにする
 
 jobs:
-  fetch:
+  instagram:
+    name: Instagram(自分+競合+ハッシュタグ)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          node-version: '22'
       - run: node scripts/fetch-instagram.js
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -30,3 +34,17 @@ jobs:
           INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
           INSTAGRAM_ACCOUNT_ID: ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
           INSTAGRAM_DB_ACCOUNT_ID: ${{ secrets.INSTAGRAM_DB_ACCOUNT_ID }}
+
+  threads:
+    name: Threads(キーワード+競合)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - run: node scripts/fetch-threads.js
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
